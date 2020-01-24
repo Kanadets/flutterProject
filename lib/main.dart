@@ -1,15 +1,31 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:async';
 
+
+class Post {
+  // ignore: non_constant_identifier_names
+  final String url;
+  final String author;
+  final String id;
+
+  Post(this.url, this.author, this.id);
+}
 
 class TestHttp extends StatefulWidget {
-  final String url;
+    final String url;
 
-  TestHttp({String url}):url = url;
+    TestHttp({String url}):url = url;
 
-  @override
-  State<StatefulWidget> createState() => TestHttpState();
-}// TestHttp
+
+
+    @override
+    State<StatefulWidget> createState() => TestHttpState();
+    
+}
+// TestHttp
+
 
 class TestHttpState extends State<TestHttp> {
   final _formKey = GlobalKey<FormState>();
@@ -17,11 +33,14 @@ class TestHttpState extends State<TestHttp> {
   String _url, _body;
   int _status;
 
+
+
   @override
   void initState() {
     _url = widget.url;
     super.initState();
   }//initState
+
 
   _sendRequestGet() {
     if(_formKey.currentState.validate()) {
@@ -41,7 +60,26 @@ class TestHttpState extends State<TestHttp> {
     }
   }//_sendRequestGet
 
+  Future<List<Post>> _getPost() async {
+    var data = await http.get(_url);
 
+    var jsonData = json.decode(data.body);
+
+    List<Post> posts = [];
+
+    for (var i in jsonData) {
+      Post post = Post(i["id"], i["url"], i["author"]);
+
+      posts.add(post);
+
+    }
+    print(posts.length);
+
+    return posts;
+  }
+
+
+  @override
   Widget build(BuildContext context) {
     return Form(key: _formKey, child: SingleChildScrollView(child: Column(
       children: <Widget>[
@@ -60,11 +98,46 @@ class TestHttpState extends State<TestHttp> {
         Text(_status == null ? '' :_status.toString()),
         SizedBox(height: 20.0),
         Text('Response body', style: TextStyle(fontSize: 20.0,color: Colors.blue)),
-        Text(_body == null ? '' : _body),
+
+        Container (
+          width: 600,
+          height: 600,
+          child: FutureBuilder(
+            future: _getPost(),
+            builder: (BuildContext context, AsyncSnapshot snapshot){
+              if(snapshot.data == null) {
+                return Container(
+                  child: Center(
+                    child: Text("Loading..."),
+                  ),
+                );
+              } else {
+                return ListView.builder (
+                  itemCount: snapshot.data.length,
+                  itemBuilder: (BuildContext context, int index){
+                    return ListTile (
+                      leading: Container(
+                        height: 100,
+                        width: 100,
+                        child: Image.asset(snapshot.data[index].url),
+                      ),
+                      title: Text(snapshot.data[index].id),
+                    );
+                  },
+                );
+              }
+            },
+          ),
+        )
+//        Text(_body == null ? '' : _body),
       ],
     )));
-  }//build
+  }
+
 }//TestHttpState
+
+
+
 
 class MyApp extends StatelessWidget {
   @override
@@ -73,7 +146,7 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(
           title: Text('Test HTTP API'),
         ),
-        body: TestHttp(url: 'http://calapi.inadiutorium.cz/api/v0/en/calendars/default/putYearHere/numberOfMonth')
+        body: TestHttp(url: 'https://picsum.photos/v2/list')
     );
   }
 }
