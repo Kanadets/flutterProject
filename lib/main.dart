@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:async';
@@ -6,11 +7,12 @@ import 'dart:async';
 
 class Post {
   // ignore: non_constant_identifier_names
-  final String url;
-  final String author;
   final String id;
+  final String author;
+  final String download_url;
 
-  Post(this.url, this.author, this.id);
+
+  Post(this.id, this.author, this.download_url);
 }
 
 class TestHttp extends StatefulWidget {
@@ -51,6 +53,7 @@ class TestHttpState extends State<TestHttp> {
         _body = response.body;
 
         setState(() {});//reBuildWidget
+        print(_status);
       }).catchError((error){
         _status = 0;
         _body = error.toString();
@@ -64,11 +67,11 @@ class TestHttpState extends State<TestHttp> {
     var data = await http.get(_url);
 
     var jsonData = json.decode(data.body);
-
+    print(jsonData);
     List<Post> posts = [];
 
     for (var i in jsonData) {
-      Post post = Post(i["id"], i["url"], i["author"]);
+      Post post = Post(i["author"], i["id"], i["download_url"]);
 
       posts.add(post);
 
@@ -105,6 +108,7 @@ class TestHttpState extends State<TestHttp> {
           child: FutureBuilder(
             future: _getPost(),
             builder: (BuildContext context, AsyncSnapshot snapshot){
+              print(snapshot.data);
               if(snapshot.data == null) {
                 return Container(
                   child: Center(
@@ -119,9 +123,10 @@ class TestHttpState extends State<TestHttp> {
                       leading: Container(
                         height: 100,
                         width: 100,
-                        child: Image.asset(snapshot.data[index].url),
+                        child: Image.network(snapshot.data[index].download_url),
                       ),
                       title: Text(snapshot.data[index].id),
+                      subtitle: Text(snapshot.data[index].author),
                     );
                   },
                 );
@@ -157,3 +162,7 @@ void main() => runApp(
         home: MyApp()
     )
 );
+
+//leading: CircleAvatar(
+//backgroundImage: NetworkImage(snapshot.data[index].download_url)
+//),
